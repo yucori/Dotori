@@ -13,6 +13,9 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -23,6 +26,17 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        http
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(List.of("http://localhost:8501"));
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true);
+                    return config;
+                }))
+                .csrf(csrf -> csrf.disable());
 
         // 1. Security filter chain 적용 범위 명시
         http.securityMatcher("/**");
