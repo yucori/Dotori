@@ -1,0 +1,30 @@
+services:
+  dotori-db:
+    image: postgres:14-alpine
+    container_name: dotori-db
+    networks:
+      - dotori-network
+    env_file:
+      - ./backend/dotori/.env
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  dotori-backend:
+    build: ./backend/dotori
+    container_name: dotori-backend
+    depends_on:
+      - dotori-db
+    networks:
+      - dotori-network
+    env_file:
+      - ./backend/dotori/.env
+    ports:
+      - "8080:8080"
+
+networks:
+  dotori-network:
+    external: true
