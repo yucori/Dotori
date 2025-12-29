@@ -19,3 +19,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+# 로깅 설정은 logback-spring.xml에서 관리합니다.
+# 환경 변수로 LOG_PATH, LOG_FILE을 설정할 수 있습니다.
