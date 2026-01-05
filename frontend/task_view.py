@@ -1,6 +1,9 @@
 import streamlit as st
 import api_service
+import logging
 from datetime import datetime, time, timedelta
+
+logger = logging.getLogger(__name__)
 
 def render_tasks():
     token = st.session_state.access_token
@@ -38,6 +41,7 @@ def render_tasks():
     # --- 2. 사이드바 구성 ---
     st.sidebar.title(f"🌰 {user['nickname']}님 환영해요!")
     if st.sidebar.button("로그아웃"):
+        logger.info(f"로그아웃: userId={user.get('id')}, email={user.get('email')}")
         st.session_state.access_token = None
         st.session_state.user_info = None
         st.rerun()
@@ -75,6 +79,7 @@ def render_tasks():
 
         if st.button("🌰 도토리 보관함에 넣기", use_container_width=True):
             if not title:
+                logger.warning("작업 생성 시도: title이 비어있음")
                 st.error("업무명을 입력해주세요!")
             else:
                 payload = {
@@ -86,22 +91,36 @@ def render_tasks():
                     "endTime": st.session_state.end_time_val.strftime("%H:%M"),
                     "daysOfWeek": selected_days
                 }
-                res = api_service.create_task(token, payload)
-                if res.status_code == 200:
-                    st.success("새로운 도토리를 획득했습니다!")
-                    st.rerun()
-                else:
-                    st.error(f"저장 실패: {res.text}")
+                logger.info(f"작업 생성 시도: userId={user.get('id')}, title={title}, priorityType={priority}")
+                try:
+                    res = api_service.create_task(token, payload)
+                    if res.status_code == 200:
+                        task_data = res.json()
+                        logger.info(f"작업 생성 성공: userId={user.get('id')}, taskId={task_data.get('id')}, title={title}")
+                        st.success("새로운 도토리를 획득했습니다!")
+                        st.rerun()
+                    else:
+                        logger.warning(f"작업 생성 실패: userId={user.get('id')}, title={title}, status_code={res.status_code}, response={res.text}")
+                        st.error(f"저장 실패: {res.text}")
+                except Exception as e:
+                    logger.error(f"작업 생성 중 예외 발생: userId={user.get('id')}, title={title}, error={str(e)}")
+                    st.error("작업 저장 중 오류가 발생했습니다. 다시 시도해주세요.")
 
     st.markdown("---")
 
     # --- 4. 도토리 목록 표시 섹션 ---
     st.header("📅 나의 도토리 계획")
     
+    logger.debug(f"자동 계획 조회 시도: userId={user.get('id')}")
     with st.spinner("보관함을 확인하는 중..."):
-        res = api_service.get_auto_plan(token)
+        try:
+            res = api_service.get_auto_plan(token)
+        except Exception as e:
+            logger.error(f"자동 계획 조회 중 예외 발생: userId={user.get('id')}, error={str(e)}")
+            st.error("계획을 불러오는 중 오류가 발생했습니다.")
+            res = None
     
-    if res.status_code == 200:
+    if res and res.status_code == 200:
         tasks = res.json()
         if not tasks:
             st.info("보관함이 비어있습니다. 오늘 할 일을 추가해보세요!")
@@ -145,10 +164,21 @@ def render_tasks():
                     with c3:
                         # 미루기 버튼
                         if st.button("미루기", key=f"postpone_{t_id}"):
-                            risk_res = api_service.check_postpone_risk(token, t_id)
-                            if risk_res.status_code == 200:
-                                risk_data = risk_res.json()
-                                st.warning(f"{risk_data['riskProbability']}% 위험")
-                                st.toast(risk_data['message'])
+                            logger.info(f"미루기 리스크 조회 시도: userId={user.get('id')}, taskId={t_id}")
+                            try:
+                                risk_res = api_service.check_postpone_risk(token, t_id)
+                                if risk_res.status_code == 200:
+                                    risk_data = risk_res.json()
+                                    logger.info(f"미루기 리스크 조회 성공: userId={user.get('id')}, taskId={t_id}, risk={risk_data.get('riskProbability')}%")
+                                    st.warning(f"{risk_data['riskProbability']}% 위험")
+                                    st.toast(risk_data['message'])
+                                else:
+                                    logger.warning(f"미루기 리스크 조회 실패: userId={user.get('id')}, taskId={t_id}, status_code={risk_res.status_code}")
+                                    st.error("리스크 조회에 실패했습니다.")
+                            except Exception as e:
+                                logger.error(f"미루기 리스크 조회 중 예외 발생: userId={user.get('id')}, taskId={t_id}, error={str(e)}")
+                                st.error("리스크 조회 중 오류가 발생했습니다.")
     else:
+        if res:
+            logger.warning(f"자동 계획 조회 실패: userId={user.get('id')}, status_code={res.status_code}")
         st.error("목록을 불러오지 못했습니다.")

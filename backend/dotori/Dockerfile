@@ -22,10 +22,15 @@ RUN mkdir -p /app/logs && \
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
+# 데이터독 자바 에이전트 다운로드
+ADD https://dtdg.co/latest-java-tracer dd-java-agent.jar
+
 # 환경 변수 설정
 ENV TZ=Asia/Seoul
 ENV LOG_PATH=/app/logs
 ENV LOG_FILE=dotori
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+            "-javaagent:dd-java-agent.jar", \
+            "-jar", "app.jar"]

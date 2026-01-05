@@ -14,8 +14,8 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     // Jwt 생성 및 검증
-    private final String SECRET = ${JWT_SECRET_KEY};
-    private final long EXPIRATION = ${JWT_EXPIRATION_TIME}; // 24시간
+    private final String SECRET = System.getenv("JWT_SECRET_KEY");
+    private final long EXPIRATION = Long.parseLong(System.getenv("JWT_EXPIRATION_TIME")); // 24시간
 
     private byte[] getSigningKey() {
         return SECRET.getBytes(StandardCharsets.UTF_8);
