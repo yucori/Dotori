@@ -104,4 +104,63 @@ class AuthIntegrationTest {
                 )
                 .andExpect(status().isForbidden()); // 🔥 403으로 변경
     }
+
+    @Test
+    @DisplayName("중복 이메일로 회원가입 시도 → 400 Bad Request")
+    void signup_duplicate_email_fail() throws Exception {
+        // 첫 번째 회원가입
+        signup_success();
+
+        // 동일한 이메일로 다시 회원가입 시도
+        Map<String, String> request = Map.of(
+                "name", "test_name2",
+                "email", "test@example.com",
+                "password", "1234",
+                "nickname", "test_nickname2"
+        );
+
+        mockMvc.perform(
+                        post("/auth/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$").value("Email already exists"));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 이메일로 로그인 시도 → 404 Not Found")
+    void login_user_not_found_fail() throws Exception {
+        Map<String, String> request = Map.of(
+                "email", "notfound@example.com",
+                "password", "1234"
+        );
+
+        mockMvc.perform(
+                        post("/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$").value("User not found"));
+    }
+
+    @Test
+    @DisplayName("잘못된 비밀번호로 로그인 시도 → 400 Bad Request")
+    void login_invalid_password_fail() throws Exception {
+        signup_success();
+
+        Map<String, String> request = Map.of(
+                "email", "test@example.com",
+                "password", "wrong_password"
+        );
+
+        mockMvc.perform(
+                        post("/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$").value("Password does not match"));
+    }
 }

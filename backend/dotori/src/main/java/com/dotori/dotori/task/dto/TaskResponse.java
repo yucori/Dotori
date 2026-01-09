@@ -2,6 +2,7 @@ package com.dotori.dotori.task.dto;
 
 import com.dotori.dotori.task.entity.Task;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.time.LocalTime;
@@ -12,6 +13,7 @@ public class TaskResponse {
     private String title;
     private int priorityType;
     private int durationMinutes;
+    @JsonProperty("isFixed")
     private boolean isFixed;
     private int postponeCount;
 
