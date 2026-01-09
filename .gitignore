@@ -32,3 +32,5 @@ out/
 .idea/
 *.iml
 .DS_Store
+*.pyc
+__pycache__/

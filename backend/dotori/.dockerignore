@@ -1,0 +1,35 @@
+# 빌드 산출물
+build/
+.gradle/
+*.class
+*.jar
+*.war
+
+# 로그 파일 (컨테이너 내부에서 생성되므로 제외)
+logs/
+*.log
+
+# IDE 설정
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# 환경 변수 파일
+.env
+.env.local
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# 기타
+*.swp
+*.swo
+*~
+

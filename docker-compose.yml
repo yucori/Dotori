@@ -1,0 +1,44 @@
+services:
+  dotori-db:
+    image: postgres:14-alpine
+    container_name: dotori-db
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "postgres", "service": "dotori-db"}]'
+    networks:
+      - dotori-network
+    env_file:
+      - ./backend/dotori/.env
+    environment:
+      - DD_AGENT_HOST=datadog-agent
+      - DD_TRACE_AGENT_PORT=8126
+      - DD_SERVICE=dotori-backend
+      - DD_ENV=development
+      - DD_VERSION=1.0.0
+      - DD_LOGS_INJECTION=true
+    ports:
+      - "5432:5432"
+
+  dotori-backend:
+    build: ./backend/dotori
+    container_name: dotori-backend
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "java", "service": "dotori-backend"}]'
+    depends_on:
+      - dotori-db
+    networks:
+      - dotori-network
+    env_file:
+      - ./backend/dotori/.env
+    ports:
+      - "8080:8080"
+    volumes:
+      # 로그 파일을 호스트에 영구 저장
+      - ./logs:/app/logs
+    environment:
+      # 로그 경로 설정 (볼륨 마운트 경로와 일치)
+      - LOG_PATH=/app/logs
+      - LOG_FILE=dotori
+
+networks:
+  dotori-network:
+    external: true
